@@ -31,24 +31,43 @@ const App = () => {
   };
 
   const [previousValue, setPreviousValue] = useState('');
-  const [currentValue, setCurrentValue] = useState('');
+  // const [currentValue, setCurrentValue] = useState('');
+  const [previousIndex, setPreviousIndex] = useState(-1);
+  // const [currentIndex, setCurrentIndex] = useState(-1);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [matchCount, setMatchCount] = useState(0);
 
   const [shuffledArray, setshuffledArray] = useState([]);
-  function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
+
+  function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function shuffle([...array]) {
+    var randomIntSet = new Set();
+    while (randomIntSet.size !== 8) {
+      const j = getRandomInt(0, 7);
+      randomIntSet.add(j);
     }
 
-    return array;
+    var shuffled = [];
+
+    randomIntSet.forEach(item => {
+      console.log(item);
+      shuffled.push(array[item]);
+    });
+
+    return [...shuffled];
   }
 
   const shuffleTheBlocks = useRef(() => {
     setMatchCount(0);
     setPreviousValue('');
-    setCurrentValue('');
+    setPreviousIndex(-1);
+    setSelectedIndex(0);
+    // setCurrentValue('');
     setshuffledArray([]);
     const data = [
       {id: 1, title: 'A', selected: false, matched: false},
@@ -60,19 +79,33 @@ const App = () => {
       {id: 7, title: 'G', selected: false, matched: false},
       {id: 8, title: 'H', selected: false, matched: false},
     ];
-    // const data = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-    var random1 = shuffle(data);
-    var random2 = shuffle(data);
+    const data1 = [
+      {id: 9, title: 'A', selected: false, matched: false},
+      {id: 10, title: 'B', selected: false, matched: false},
+      {id: 11, title: 'C', selected: false, matched: false},
+      {id: 12, title: 'D', selected: false, matched: false},
+      {id: 13, title: 'E', selected: false, matched: false},
+      {id: 14, title: 'F', selected: false, matched: false},
+      {id: 15, title: 'G', selected: false, matched: false},
+      {id: 16, title: 'H', selected: false, matched: false},
+    ];
+
+    let random1 = shuffle(data);
+    let random2 = shuffle(data1);
+
+    console.log('random1 Before', random1);
+    console.log('random2 Before', random2);
+
+    random2.forEach((item, index) => {
+      random2[index].id = 8 + (index + 1);
+    });
 
     console.log('random1', random1);
-
-    random2.forEach((item, index) => (item.id = 8 + (index + 1)));
-
     console.log('random2', random2);
-    random2.forEach(item => random1.push(item));
-    setshuffledArray(random2);
 
-    console.log('final', random2);
+    const final = random1.concat(random2);
+    console.log('final', final);
+    setshuffledArray(final);
   });
 
   useEffect(() => {
@@ -88,22 +121,33 @@ const App = () => {
 
     setshuffledArray(sa);
 
-    if (previousValue) {
-      setCurrentValue(item.title);
-    } else {
+    if (!previousValue) {
       setPreviousValue(item.title);
+      setPreviousIndex(index);
     }
 
-    if (previousValue === currentValue) {
-      setMatchCount(matchCount + 1);
+    if (previousValue.length > 0 && item.title.length > 0) {
       var sa = shuffledArray;
-      sa[index].matched = true;
+      if (previousValue === item.title) {
+        setMatchCount(matchCount + 1);
 
-      setPreviousValue('');
-      setCurrentValue('');
-    } else {
-      setPreviousValue('');
-      setCurrentValue('');
+        sa[index].matched = true;
+        sa[previousIndex].matched = true;
+        sa.forEach(it => (it.selected = false));
+
+        setPreviousValue('');
+
+        setPreviousIndex(-1);
+
+        setshuffledArray(sa);
+      } else {
+        setPreviousValue('');
+
+        setPreviousIndex(-1);
+
+        sa.forEach(it => (it.selected = false));
+        setshuffledArray(sa);
+      }
     }
   }
   return (
@@ -150,41 +194,42 @@ const App = () => {
             renderItem={({item, index}) => (
               <View>
                 {item.selected === true ? (
-                  <TouchableOpacity
-                    onPress={() =>
-                      item.matched ? null : showTheCard(item, index)
-                    }>
-                    <View
-                      style={{
-                        width: (Dimensions.get('screen').width - 30) / 4,
-                        height: 100,
-                        backgroundColor: item.matched
-                          ? 'rgba(52, 52, 52, 0.3)'
-                          : 'blue',
-                        marginLeft: 5,
-                        marginTop: 5,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}>
-                      <Text style={{fontSize: 24, color: 'white'}}>
-                        {item.title}
-                        {item.id}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
+                  <View
+                    style={{
+                      width: (Dimensions.get('screen').width - 30) / 4,
+                      height: 100,
+                      backgroundColor: item.matched
+                        ? 'rgba(52, 52, 52, 0.3)'
+                        : 'blue',
+                      marginLeft: 5,
+                      marginTop: 5,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                    <Text style={{fontSize: 24, color: 'white'}}>
+                      {item.title}
+                    </Text>
+                  </View>
                 ) : (
                   <TouchableOpacity onPress={() => showTheCard(item, index)}>
                     <View
                       style={{
                         width: (Dimensions.get('screen').width - 30) / 4,
                         height: 100,
-                        backgroundColor: 'orange',
+                        backgroundColor: item.matched
+                          ? 'rgba(52, 52, 52, 0.3)'
+                          : 'orange',
                         marginLeft: 5,
                         marginTop: 5,
                         alignItems: 'center',
                         justifyContent: 'center',
-                      }}
-                    />
+                      }}>
+                      {item.matched ? (
+                        <Text style={{fontSize: 24, color: 'white'}}>
+                          {item.title}
+                        </Text>
+                      ) : null}
+                    </View>
                   </TouchableOpacity>
                 )}
               </View>
